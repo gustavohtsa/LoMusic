@@ -72,6 +72,10 @@ function prevPage(){
     page.value--;
     updatePagination();
 }
+function setPage(pgn: number){
+    page.value = pgn;
+    updatePagination();
+}
 function updatePagination(){
     if(page.value == 0)
     {
