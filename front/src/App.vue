@@ -2,6 +2,7 @@
 // This starter template is using Vue 3 <script setup> SFCs
 // Check out https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup
 import tableControl from './components/table/tableControl.vue'
+import LoginPage from './components/LoginPage.vue'
 
 const table_fields : string[] = [
     "name",
@@ -16,11 +17,12 @@ import tableData from './user-data.json'
 
 <template>
 <div class="container">
-  <tableControl :data="tableData" :fields="table_fields" :display_options="true" edit_link="form"></tableControl>
+  <loginPage></loginPage>
+  <!-- <tableControl :data="tableData" :fields="table_fields" :display_options="true" edit_link="form"></tableControl> -->
 </div>
 </template>
 
-<style>
+<style>8
 </style>
 
 <style scoped>
