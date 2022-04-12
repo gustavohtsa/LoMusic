@@ -10,14 +10,14 @@ import {
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { HashPipe } from '../pipes/hash.pipe';
+import { ParseHashPipe } from '../pipes/parse-hash.pipe';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
-  create(@Body(new HashPipe()) createUserDto: CreateUserDto) {
+  create(@Body(new ParseHashPipe()) createUserDto: CreateUserDto) {
     return this.userService.createUser(createUserDto);
   }
 
@@ -34,7 +34,7 @@ export class UserController {
   @Patch(':id')
   update(
     @Param('id') id: string,
-    @Body(new HashPipe()) updateUserDto: UpdateUserDto,
+    @Body(new ParseHashPipe()) updateUserDto: UpdateUserDto,
   ) {
     return this.userService.updateUser({
       where: { id },
