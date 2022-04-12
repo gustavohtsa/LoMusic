@@ -22,7 +22,7 @@ import tableData from './user-data.json'
 </div>
 </template>
 
-<style>8
+<style>
 </style>
 
 <style scoped>
