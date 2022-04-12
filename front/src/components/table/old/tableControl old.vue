@@ -1,5 +1,198 @@
+<script setup lang="ts">
+import { ref, computed,  toRefs, defineProps, withDefaults} from 'vue'
+import { useTable } from '../../../composables/table'
+const props = withDefaults(defineProps<{
+    data: Object[],
+    fields: string[],
+    display_options: boolean,
+    per_page: number,
+    edit_link: string,
+}>(),
+{
+    data: () => [],
+    fields: () => [],
+    display_options: false,
+    per_page: 13,
+    edit_link: '',
+})
+const {
+    data,
+    fields,
+    display_options,
+    per_page,
+    edit_link
+} = props
+let sort_column  = ref('')
+let sort_order  = ref(true)
+let display_data  = ref(data)
+let filtered = ref(data)
+let display = ref(data)
+let page = ref(1)
+let pages = ref(1)
+let page_display = ref(15)
+let search = ref('')
+let last_search = ref('')
+let display_search = ref('')
+
+function firstUpper(str : string)
+{
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+function sortTable(column : string){
+if(sort_column.value == column) 
+{
+    sort_order.value = !sort_order.value;
+}
+else
+{
+    sort_order.value = true
+    sort_column.value = column;
+}
+// reduce display data into display
+filtered.value.sort((a : any, b : any) => 
+{
+    if(a[sort_column.value] < b[sort_column.value])
+    {
+        return sort_order.value ? -1 : 1;
+    }
+    if(a[sort_column.value] > b[sort_column.value])
+    {
+        return sort_order.value ? 1 : -1;
+    }
+    return 0;
+})
+updatePagination()
+}
+
+function nextPage(){
+    page.value++;
+    updatePagination();
+}
+function prevPage(){
+    page.value--;
+    updatePagination();
+}
+function setPage(pgn: number){
+    page.value = pgn;
+    updatePagination();
+}
+function updatePagination(){
+    if(page.value == 0)
+    {
+    page.value = pages.value;
+    }
+    let comeco =
+        per_page * (page.value - 1)
+    let final =
+        per_page * page.value
+    if (comeco >= filtered.value.length) {
+        page.value = 1
+        comeco =
+        per_page * (page.value - 1)
+        final = per_page * page.value
+    }
+    pages.value = Math.ceil(filtered.value.length / per_page)
+    display.value = filtered.value.slice(comeco, final)
+}
+function updateSearch(){
+    const filtered_set = display_data.value.filter((item:any) => {
+        for(const key in fields)
+        {
+            if(item[fields[key] as string].toString().toLowerCase().includes(search.value.toLowerCase()))
+            {
+                return true;
+            }
+        }
+        return false;
+    });
+    if(filtered_set.length != 0 || display_data.value.length == 0)
+    {
+        filtered.value = filtered_set;
+        last_search.value = search.value;
+    }
+    const search_set= search.value.search(last_search.value);
+    if(search_set == 0)
+    {
+        display_search.value = `<font color="white">${last_search.value}</font><font color="red">${search.value.replace(last_search.value,'')}</font>`;
+    }
+    else if(search_set >= 0)
+    {
+        const mid = search.value.split(last_search.value);
+        display_search.value = `<font color="red">${mid[0]}</font><font color="white">${last_search.value}</font><font color="red">${mid[1]}</font>`;
+
+    }
+    else
+    {
+        display_search.value = `<font color="red">${search.value}</font>`;
+    }
+    updatePagination()
+}
+function remove(row: any){
+    // $emit.value('remove', row);
+    display_data.value = display_data.value.filter((item:any) => item != row);
+    updateSearch()
+}
+updatePagination()
+let display_pages = computed<object>(()=>{
+            const result = []
+            let start;
+            let end;
+            if(page_display.value >= pages.value - 4)
+            {
+                start = 1;
+                end = pages.value;
+            }
+            else
+            {
+                let leftpad = Math.ceil(page_display.value/2)
+                let rightpad = Math.ceil(page_display.value/2)
+                if(page.value - leftpad < 0)
+                {
+                    rightpad -= page.value - leftpad 
+                    leftpad = 1
+                }
+                else
+                {
+                    leftpad = page.value - leftpad + 1
+                }
+                if(page.value + rightpad > pages.value)
+                {
+                    leftpad -= page.value + rightpad - pages.value
+                    rightpad = pages.value
+                }
+                else
+                {
+                    rightpad = page.value + rightpad
+                }
+                start = leftpad
+                end = rightpad
+
+                if(start <= 1)
+                {
+                    end +=1
+                }
+                if(start <= 2)
+                {
+                    end +=1
+                }
+                if(end >= pages.value)
+                {
+                    start -= 1;
+                }
+                if(end >= pages.value-1)
+                {
+                    start -= 1;
+                }
+            }
+            for(let i = start; i <= end; i++){
+                result.push(i)
+            }
+            return result
+    })
+</script>
 <template>
 <div>
+    {{}}
   <div style="max-width:800px;margin:auto;margin-bottom:50px;margin-top:40px">
   <div style="margin:20px 0 20px 0;">
             <div v-html="display_search" class="phantom-input-overlay"></div>
@@ -90,124 +283,6 @@
       </div>
     </div>
 </template>
-
-<script lang="ts">
-import { defineComponent } from "vue";
-import { paginationMethods, paginationData } from "./pagination";
-import { searchMethods, searchData } from "./search";
-import { sortMethods, sortData } from "./sort";
-export default defineComponent({
-  props: {
-    data: {
-      type: Object,
-      default: () => [],
-    },
-    fields: {
-      type: Array,
-      default: () => [],
-    },
-    display_options: {
-      type: Boolean,
-      default: false,
-    },	
-    per_page: {
-      type: Number,
-      default: 13,
-    },
-    edit_link: {
-      type: String,
-      default: "",
-    },
-  },
-  data(){
-    return {
-      ...sortData,
-      ...paginationData,
-      ...searchData,
-      display_data : this.data,
-      filtered: this.data,
-      display: this.data,
-    } 
-  },
-  methods:{
-    ...paginationMethods,
-    ...searchMethods,
-    ...sortMethods,
-    firstUpper(str : string)
-    {
-        return str.charAt(0).toUpperCase() + str.slice(1);
-    },
-    remove(row: any){
-        this.$emit('remove', row);
-        this.display_data = this.display_data.filter((item:any) => item != row);
-        this.updateSearch()
-    },
-  },
-  created(){
-    this.updatePagination()
-  },
-  
-   computed: {
-        display_pages(){
-            const result = []
-            let start;
-            let end;
-            if(this.page_display >= this.pages - 4)
-            {
-                start = 1;
-                end = this.pages;
-            }
-            else
-            {
-                let leftpad = Math.ceil(this.page_display/2)
-                let rightpad = Math.ceil(this.page_display/2)
-                if(this.page - leftpad < 0)
-                {
-                    rightpad -= this.page - leftpad 
-                    leftpad = 1
-                }
-                else
-                {
-                    leftpad = this.page - leftpad + 1
-                }
-                if(this.page + rightpad > this.pages)
-                {
-                    leftpad -= this.page + rightpad - this.pages
-                    rightpad = this.pages
-                }
-                else
-                {
-                    rightpad = this.page + rightpad
-                }
-                start = leftpad
-                end = rightpad
-
-                if(start <= 1)
-                {
-                    end +=1
-                }
-                if(start <= 2)
-                {
-                    end +=1
-                }
-                if(end >= this.pages)
-                {
-                    start -= 1;
-                }
-                if(end >= this.pages-1)
-                {
-                    start -= 1;
-                }
-            }
-            for(let i = start; i <= end; i++){
-                result.push(i)
-            }
-            return result
-        },
-        
-    },
-})
-</script>
 
 <style scoped>
 /* nav */
